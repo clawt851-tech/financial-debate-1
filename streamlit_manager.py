@@ -110,7 +110,11 @@ class StreamlitTradingManager:
         analysts = build_analyst_nodes(quick_thinking_llm, toolkit)
 
         self.printer.update_item("market", labels["market_running"].strip())
-        res = run_analyst(analysts["market"], state, toolkit)
+        res = run_analyst(
+    analysts["market"],
+    state,
+    [toolkit.get_recent_yfinance_data, toolkit.get_technical_indicators],
+)
         state["market_report"] = res.get("market_report", labels["failed_report"])
         self.printer.mark_item_done("market")
 
