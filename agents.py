@@ -87,33 +87,34 @@ def create_analyst_node(llm, toolkit, system_message, tools, output_field):
 def run_analyst(analyst_node, initial_state, toolkit, max_steps: int = 5):
     """
     Drive a single analyst's ReAct loop outside a full LangGraph run.
-    FIXED: Uses message-list invocation to bypass Config key errors.
+    FIXED: Uses the standard positional invocation for standalone ToolNodes.
     """
     state = initial_state
-    # ToolNode needs the list of all tools the analyst can call
+    # Initialize ToolNode with the tools from the toolkit
     tool_node = ToolNode(toolkit.all_tools())
 
     for _ in range(max_steps):
-        # 1. Get the analyst's thought/tool call
+        # 1. AI decides whether to use a tool or provide a report
         result = analyst_node(state)
         
-        # 2. Update the local state with the AI's response
+        # 2. Append the AI's response to the conversation history
         merged_messages = state["messages"] + result["messages"]
         state = {**state, **result, "messages": merged_messages}
 
-        # 3. Check if the LLM actually requested a tool
+        # 3. Use tools_condition to check for tool_calls
         if tools_condition({"messages": merged_messages}) == "tools":
-            # FIX: Instead of passing a dict, pass the message list directly.
-            # We also provide an empty configurable dict to satisfy internal validation.
-            tool_result = tool_node.invoke(
+            # POSITIONAL FIX: 
+            # First arg: The list of messages containing the tool call.
+            # Second arg: A basic config object to satisfy the internal API.
+            tool_output_messages = tool_node.invoke(
                 merged_messages, 
-                {"configurable": {}}
+                {"configurable": {"thread_id": "standalone"}}
             )
             
-            # 4. Append tool outputs to the conversation and loop back
-            state["messages"] = state["messages"] + tool_result
+            # 4. ToolNode returns a list of tool messages; append them to history
+            state["messages"] = state["messages"] + tool_output_messages
         else:
-            # AI provided a final answer, exit loop
+            # No tools requested; analysis complete
             break
             
     return state
