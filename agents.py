@@ -103,18 +103,19 @@ def run_analyst(analyst_node, initial_state, toolkit, max_steps: int = 5):
 
         # 3. Use tools_condition to check for tool_calls
         if tools_condition({"messages": merged_messages}) == "tools":
-            # POSITIONAL FIX: 
-            # First arg: The list of messages containing the tool call.
-            # Second arg: A basic config object to satisfy the internal API.
-            tool_output_messages = tool_node.invoke(
-                merged_messages, 
-                {"configurable": {"thread_id": "standalone"}}
+            tool_result = tool_node.invoke(
+                {"messages": [merged_messages[-1]]},
+                config={"configurable": {"thread_id": "standalone"}},
             )
-            
-            # 4. ToolNode returns a list of tool messages; append them to history
+        
+            tool_output_messages = (
+                tool_result["messages"]
+                if isinstance(tool_result, dict) and "messages" in tool_result
+                else tool_result
+            )
+        
             state["messages"] = state["messages"] + tool_output_messages
         else:
-            # No tools requested; analysis complete
             break
             
     return state
