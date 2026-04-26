@@ -87,32 +87,33 @@ def create_analyst_node(llm, toolkit, system_message, tools, output_field):
 def run_analyst(analyst_node, initial_state, toolkit, max_steps: int = 5):
     """
     Drive a single analyst's ReAct loop outside a full LangGraph run.
-    FIXED: Uses a generic config to satisfy ToolNode validation.
+    FIXED: Uses message-list invocation to bypass Config key errors.
     """
     state = initial_state
+    # ToolNode needs the list of all tools the analyst can call
     tool_node = ToolNode(toolkit.all_tools())
 
     for _ in range(max_steps):
         # 1. Get the analyst's thought/tool call
         result = analyst_node(state)
         
-        # 2. Update the local state with new messages
+        # 2. Update the local state with the AI's response
         merged_messages = state["messages"] + result["messages"]
         state = {**state, **result, "messages": merged_messages}
 
-        # 3. Check if the LLM wants to use a tool
+        # 3. Check if the LLM actually requested a tool
         if tools_condition({"messages": merged_messages}) == "tools":
-            # FIX: We pass an empty but present config to bypass the 'N/A' key error
-            # Some environments require the 'configurable' key to be present even if empty
+            # FIX: Instead of passing a dict, pass the message list directly.
+            # We also provide an empty configurable dict to satisfy internal validation.
             tool_result = tool_node.invoke(
-                {"messages": merged_messages},
-                config={"configurable": {}} 
+                merged_messages, 
+                {"configurable": {}}
             )
             
-            # 4. Add tool output to messages and continue loop
-            state["messages"] = state["messages"] + tool_result["messages"]
+            # 4. Append tool outputs to the conversation and loop back
+            state["messages"] = state["messages"] + tool_result
         else:
-            # No tools called; analyst is finished
+            # AI provided a final answer, exit loop
             break
             
     return state
