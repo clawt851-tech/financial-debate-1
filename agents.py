@@ -87,30 +87,35 @@ def create_analyst_node(llm, toolkit, system_message, tools, output_field):
 def run_analyst(analyst_node, initial_state, toolkit, max_steps: int = 5):
     """
     Drive a single analyst's ReAct loop outside a full LangGraph run.
-    FIXED: Added config to tool_node.invoke to prevent ValueError.
+    FIXED: Uses a generic config to satisfy ToolNode validation.
     """
     state = initial_state
     tool_node = ToolNode(toolkit.all_tools())
 
     for _ in range(max_steps):
+        # 1. Get the analyst's thought/tool call
         result = analyst_node(state)
+        
+        # 2. Update the local state with new messages
         merged_messages = state["messages"] + result["messages"]
         state = {**state, **result, "messages": merged_messages}
 
+        # 3. Check if the LLM wants to use a tool
         if tools_condition({"messages": merged_messages}) == "tools":
-            # FIX: We pass a config dict to satisfy the validation check
+            # FIX: We pass an empty but present config to bypass the 'N/A' key error
+            # Some environments require the 'configurable' key to be present even if empty
             tool_result = tool_node.invoke(
                 {"messages": merged_messages},
-                config={"configurable": {"thread_id": "analyst_react_loop"}}
+                config={"configurable": {}} 
             )
-            state = {
-                **state,
-                "messages": merged_messages + tool_result["messages"],
-            }
+            
+            # 4. Add tool output to messages and continue loop
+            state["messages"] = state["messages"] + tool_result["messages"]
         else:
+            # No tools called; analyst is finished
             break
+            
     return state
-
 # ===========================================================================
 # Concrete analyst nodes
 # ===========================================================================
