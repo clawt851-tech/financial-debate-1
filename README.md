@@ -63,8 +63,8 @@ deep_trading_system_v_2/
 
 The default models are configured in `config.py`:
 
-- `gpt-4o` for deeper reasoning and final decisions
-- `gpt-4o-mini` for faster analyst and data-processing steps
+- `gpt-5.5` for deeper reasoning and final decisions
+- `gpt-5.4-mini` for faster analyst and data-processing steps
 
 ## Setup
 
