@@ -2,8 +2,8 @@
 Environment, API keys, LangSmith tracing and the central config dictionary.
 
 Two-tier LLM design:
-    deep_think_llm  (gpt-4o)      -> heavy reasoning + final decisions
-    quick_think_llm (gpt-4o-mini) -> routine data processing + first-pass
+    deep_think_llm  (gpt-5.5)      -> heavy reasoning + final decisions
+    quick_think_llm (gpt-5.4-mini) -> routine data processing + first-pass
 
 Loads keys from `.env`:
     OPENAI_API_KEY, FINNHUB_API_KEY, TAVILY_API_KEY, LANGSMITH_API_KEY
@@ -81,8 +81,8 @@ config = {
 
     # LLM settings - which model handles which cognitive task
     "llm_provider": "openai",
-    "deep_think_llm": "gpt-4o",        # heavy reasoning + final decisions
-    "quick_think_llm": "gpt-4o-mini",  # fast / cheap data processing
+    "deep_think_llm": "gpt-5.5",        # heavy reasoning + final decisions
+    "quick_think_llm": "gpt-5.4-mini",  # fast / cheap data processing
     "backend_url": "https://api.openai.com/v1",
 
     # Debate / discussion settings
