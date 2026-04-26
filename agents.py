@@ -423,6 +423,3 @@ def create_reflector(llm):
         memory.add_situations([(situation, lesson)])
         return lesson
     return reflect
-
-        return lesson
-    return reflect
