@@ -84,9 +84,9 @@ def create_analyst_node(llm, toolkit, system_message, tools, output_field):
 
     return analyst_node
 
-def run_analyst(analyst_node, initial_state, toolkit, max_steps: int = 5):
+def run_analyst(analyst_node, initial_state, tools, max_steps: int = 5):
     state = initial_state
-    tools_by_name = {tool.name: tool for tool in toolkit.all_tools()}
+    tools_by_name = {tool.name: tool for tool in tools}
 
     for _ in range(max_steps):
         result = analyst_node(state)
@@ -101,7 +101,15 @@ def run_analyst(analyst_node, initial_state, toolkit, max_steps: int = 5):
 
         tool_messages = []
         for tool_call in ai_msg.tool_calls:
-            tool = tools_by_name[tool_call["name"]]
+            tool_name = tool_call["name"]
+
+            if tool_name not in tools_by_name:
+                raise KeyError(
+                    f"Tool '{tool_name}' was called, but available tools are: "
+                    f"{list(tools_by_name.keys())}"
+                )
+
+            tool = tools_by_name[tool_name]
             tool_msg = tool.invoke(tool_call)
             tool_messages.append(tool_msg)
 
