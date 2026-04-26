@@ -8,9 +8,6 @@ Every agent factory used by the deep-trading system.
     Risk debaters   create_risk_debator       -> risky / safe / neutral
     Portfolio mgr   create_portfolio_manager  -> final_trade_decision
     Reflection      create_reflector          -> writes lessons back into memory
-
-A small `run_analyst()` helper drives the ReAct loop for analyst agents
-outside of a full LangGraph run (matches the article's notebook style).
 """
 
 import functools
@@ -73,7 +70,7 @@ def create_analyst_node(llm, toolkit, system_message, tools, output_field):
 def run_analyst(analyst_node, initial_state, toolkit, max_steps: int = 5):
     """
     Drive a single analyst's ReAct loop outside a full LangGraph run.
-    FIXED: Added config to tool_node.invoke to prevent ValueError 'N/A'.
+    FIXED: Added config to tool_node.invoke to prevent ValueError.
     """
     state = initial_state
     tool_node = ToolNode(toolkit.all_tools())
@@ -84,10 +81,10 @@ def run_analyst(analyst_node, initial_state, toolkit, max_steps: int = 5):
         state = {**state, **result, "messages": merged_messages}
 
         if tools_condition({"messages": merged_messages}) == "tools":
-            # FIX: Providing a config dictionary satisfies the LangGraph requirement
+            # FIX: We pass a config dict to satisfy the validation check
             tool_result = tool_node.invoke(
                 {"messages": merged_messages},
-                config={"configurable": {"thread_id": "analyst_internal_loop"}}
+                config={"configurable": {"thread_id": "analyst_react_loop"}}
             )
             state = {
                 **state,
@@ -133,7 +130,10 @@ def build_analyst_nodes(quick_thinking_llm, toolkit):
 # ===========================================================================
 def create_researcher_node(llm, memory, role_prompt, agent_name):
     def researcher_node(state):
-        situation = f"Market: {state['market_report']}\nSentiment: {state['sentiment_report']}\nNews: {state['news_report']}\nFundamentals: {state['fundamentals_report']}"
+        situation = (f"Market: {state['market_report']}\n"
+                     f"Sentiment: {state['sentiment_report']}\n"
+                     f"News: {state['news_report']}\n"
+                     f"Fundamentals: {state['fundamentals_report']}")
         past_memories = "\n".join(m["recommendation"] for m in memory.get_memories(situation))
         
         prompt = (
@@ -166,7 +166,7 @@ def create_research_manager(llm, memory):
 
 def create_trader(llm, memory):
     def trader_node(state, name):
-        prompt = f"Create an actionable proposal ending with 'FINAL TRANSACTION PROPOSAL: **BUY/HOLD/SELL**'.\nPlan: {state['investment_plan']}"
+        prompt = f"Create a proposal ending with 'FINAL TRANSACTION PROPOSAL: **BUY/HOLD/SELL**'.\nPlan: {state['investment_plan']}"
         return {"trader_investment_plan": llm.invoke(prompt).content, "sender": name}
     return trader_node
 
@@ -176,7 +176,7 @@ def build_trader(quick_thinking_llm, memories):
 def create_risk_debator(llm, role_prompt, agent_name):
     def risk_debator_node(state):
         risk_state = state["risk_debate_state"].copy()
-        prompt = f"{role_prompt}\nEvaluate this plan: {state['trader_investment_plan']}\nHistory: {risk_state['history']}"
+        prompt = f"{role_prompt}\nEvaluate: {state['trader_investment_plan']}\nHistory: {risk_state['history']}"
         response = llm.invoke(prompt).content
         risk_state["history"] += f"\n{agent_name}: {response}"
         risk_state["count"] += 1
@@ -195,18 +195,3 @@ def create_portfolio_manager(llm, memory):
         prompt = f"Final Decision. Must end with 'FINAL TRANSACTION PROPOSAL: **BUY/HOLD/SELL**'.\nPlan: {state['trader_investment_plan']}\nRisk Debate: {state['risk_debate_state']['history']}"
         return {"final_trade_decision": llm.invoke(prompt).content}
     return portfolio_manager_node
-
-def extract_signal(final_trade_decision: str) -> str:
-    text = (final_trade_decision or "").upper()
-    for signal in ("BUY", "SELL", "HOLD"):
-        if signal in text.split("PROPOSAL")[-1]: return signal
-    return "HOLD" if "HOLD" in text else "UNKNOWN"
-
-def create_reflector(llm):
-    def reflect(state, outcome_summary: str, memory):
-        situation = f"Ticker: {state.get('company_of_interest')}\nOutcome: {outcome_summary}"
-        prompt = f"Distill 1-3 sentences of advice based on this result:\n{situation}"
-        lesson = llm.invoke(prompt).content.strip()
-        memory.add_situations([(situation, lesson)])
-        return lesson
-    return reflect
