@@ -85,44 +85,28 @@ def create_analyst_node(llm, toolkit, system_message, tools, output_field):
     return analyst_node
 
 def run_analyst(analyst_node, initial_state, toolkit, max_steps: int = 5):
-    """
-    Drive a single analyst's ReAct loop outside a full LangGraph run.
-    FIXED: Uses the standard positional invocation for standalone ToolNodes.
-    """
     state = initial_state
-    # Initialize ToolNode with the tools from the toolkit
-    tool_node = ToolNode(toolkit.all_tools())
+    tools_by_name = {tool.name: tool for tool in toolkit.all_tools()}
 
     for _ in range(max_steps):
-        # 1. AI decides whether to use a tool or provide a report
         result = analyst_node(state)
-        
-        # 2. Append the AI's response to the conversation history
+
         merged_messages = state["messages"] + result["messages"]
         state = {**state, **result, "messages": merged_messages}
 
-        # 3. Use tools_condition to check for tool_calls
-        if tools_condition({"messages": merged_messages}) == "tools":
-            tool_result = tool_node.invoke(
-                {"messages": [merged_messages[-1]]},
-                config={
-                    "configurable": {
-                        "thread_id": "standalone",
-                        "tools": toolkit.all_tools(),
-                    }
-                },
-            )
-        
-            tool_output_messages = (
-                tool_result["messages"]
-                if isinstance(tool_result, dict) and "messages" in tool_result
-                else tool_result
-            )
-        
-            state["messages"] = state["messages"] + tool_output_messages
-        else:
+        ai_msg = merged_messages[-1]
+
+        if not getattr(ai_msg, "tool_calls", None):
             break
-            
+
+        tool_messages = []
+        for tool_call in ai_msg.tool_calls:
+            tool = tools_by_name[tool_call["name"]]
+            tool_msg = tool.invoke(tool_call)
+            tool_messages.append(tool_msg)
+
+        state["messages"] = state["messages"] + tool_messages
+
     return state
 # ===========================================================================
 # Concrete analyst nodes
