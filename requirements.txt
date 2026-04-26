@@ -1,0 +1,17 @@
+langchain
+langgraph
+langchain_openai
+langchain_community
+tavily-python
+yfinance
+finnhub-python
+stockstats
+beautifulsoup4
+chromadb
+rich
+openai
+typing_extensions
+python-dotenv
+pandas
+langsmith
+streamlit>=1.33
