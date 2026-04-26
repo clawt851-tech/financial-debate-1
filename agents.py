@@ -99,10 +99,10 @@ def run_analyst(analyst_node, initial_state, toolkit, max_steps: int = 5):
         state = {**state, **result, "messages": merged_messages}
 
         if tools_condition({"messages": merged_messages}) == "tools":
-            # FIX: Added config dictionary to satisfy LangGraph validation
+            # FIX: We pass a config dict to avoid "Missing required config key 'N/A'"
             tool_result = tool_node.invoke(
                 {"messages": merged_messages},
-                config={"configurable": {"thread_id": "analyst_react_loop"}}
+                config={"configurable": {"thread_id": "analyst_loop"}}
             )
             state = {
                 **state,
@@ -111,7 +111,6 @@ def run_analyst(analyst_node, initial_state, toolkit, max_steps: int = 5):
         else:
             break
     return state
-
 
 # ===========================================================================
 # Concrete analyst nodes
