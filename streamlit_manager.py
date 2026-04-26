@@ -119,21 +119,33 @@ class StreamlitTradingManager:
         self.printer.mark_item_done("market")
 
         self.printer.update_item("social", labels["social_running"].strip())
-        res = run_analyst(analysts["social"], state, toolkit)
+        res = run_analyst(
+    analysts["social"],
+    state,
+    [toolkit.get_social_media_sentiment],
+)
         state["sentiment_report"] = res.get(
             "sentiment_report", labels["failed_report"]
         )
         self.printer.mark_item_done("social")
 
         self.printer.update_item("news", labels["news_running"].strip())
-        res = run_analyst(analysts["news"], state, toolkit)
+        res = run_analyst(
+    analysts["news"],
+    state,
+    [toolkit.get_finnhub_news, toolkit.get_macroeconomic_news],
+)
         state["news_report"] = res.get("news_report", labels["failed_report"])
         self.printer.mark_item_done("news")
 
         self.printer.update_item(
             "fundamentals", labels["fundamentals_running"].strip()
         )
-        res = run_analyst(analysts["fundamentals"], state, toolkit)
+        res = run_analyst(
+    analysts["fundamentals"],
+    state,
+    [toolkit.get_fundamental_analysis],
+)
         state["fundamentals_report"] = res.get(
             "fundamentals_report", labels["failed_report"]
         )
