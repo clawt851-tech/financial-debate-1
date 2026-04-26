@@ -88,8 +88,7 @@ def create_analyst_node(llm, toolkit, system_message, tools, output_field):
 def run_analyst(analyst_node, initial_state, toolkit, max_steps: int = 5):
     """
     Drive a single analyst's ReAct loop outside a full LangGraph run.
-
-    Mirrors the article's notebook-style execution.
+    FIXED: Added config to tool_node.invoke to prevent ValueError 'N/A'.
     """
     state = initial_state
     tool_node = ToolNode(toolkit.all_tools())
@@ -100,7 +99,11 @@ def run_analyst(analyst_node, initial_state, toolkit, max_steps: int = 5):
         state = {**state, **result, "messages": merged_messages}
 
         if tools_condition({"messages": merged_messages}) == "tools":
-            tool_result = tool_node.invoke({"messages": merged_messages})
+            # FIX: Added config dictionary to satisfy LangGraph validation
+            tool_result = tool_node.invoke(
+                {"messages": merged_messages},
+                config={"configurable": {"thread_id": "analyst_react_loop"}}
+            )
             state = {
                 **state,
                 "messages": merged_messages + tool_result["messages"],
