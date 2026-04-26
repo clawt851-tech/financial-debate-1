@@ -105,7 +105,12 @@ def run_analyst(analyst_node, initial_state, toolkit, max_steps: int = 5):
         if tools_condition({"messages": merged_messages}) == "tools":
             tool_result = tool_node.invoke(
                 {"messages": [merged_messages[-1]]},
-                config={"configurable": {"thread_id": "standalone"}},
+                config={
+                    "configurable": {
+                        "thread_id": "standalone",
+                        "tools": toolkit.all_tools(),
+                    }
+                },
             )
         
             tool_output_messages = (
