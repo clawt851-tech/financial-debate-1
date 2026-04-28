@@ -43,6 +43,7 @@ REPORT_TITLES = {
         "title": "Deep Trading System Report",
         "resolved": "Resolved ticker",
         "signal": "Final signal",
+        "disclaimer": "Disclaimer (English)",
         "market": "Market Analyst Report",
         "sentiment": "Social Sentiment Report",
         "news": "News Analyst Report",
@@ -58,6 +59,7 @@ REPORT_TITLES = {
         "title": "深度交易系统报告",
         "resolved": "已识别股票代码",
         "signal": "最终信号",
+        "disclaimer": "免责声明（中文）",
         "market": "市场分析报告",
         "sentiment": "社交情绪报告",
         "news": "新闻分析报告",
@@ -69,6 +71,25 @@ REPORT_TITLES = {
         "final": "投资组合经理最终决策",
         "empty": "未生成内容。",
     },
+}
+
+DISCLAIMERS = {
+    "english": (
+        "This material is for informational and discussion purposes only and does "
+        "not constitute investment advice, a recommendation, or an offer to buy "
+        "or sell any securities. The views expressed are based on current market "
+        "conditions and are subject to change without notice. Past performance "
+        "is not indicative of future results. All investments involve risk, "
+        "including the potential loss of principal. Readers should conduct their "
+        "own research and consult with a qualified financial advisor before "
+        "making any investment decisions."
+    ),
+    "chinese": (
+        "本材料仅用于信息交流与讨论之目的，不构成任何投资建议、推荐或买卖证券的要约。"
+        "上述观点基于当前市场情况，可能随时发生变化，恕不另行通知。过往表现不代表"
+        "未来结果。所有投资均存在风险，包括本金损失的可能性。读者在做出任何投资"
+        "决策前，应自行进行研究并咨询专业的财务顾问。"
+    ),
 }
 
 
@@ -242,6 +263,10 @@ def build_markdown_report(
         f"**Query:** {query.strip()}",
         f"**Trade date:** {trade_date}",
         f"**{titles['signal']}:** {signal}",
+        "",
+        f"## {titles['disclaimer']}",
+        "",
+        DISCLAIMERS[language],
         "",
         _section(titles["market"], state.get("market_report", ""), titles["empty"]),
         _section(
