@@ -223,7 +223,7 @@ def create_researcher_node(llm, memory, role_prompt, agent_name):
 
         debate_state = state["investment_debate_state"].copy()
         debate_state["history"] += "\n" + argument
-        if agent_name == "Bull Analyst":
+        if agent_name == "Bull Analyst (Optimistic Analyst)":
             debate_state["bull_history"] += "\n" + argument
         else:
             debate_state["bear_history"] += "\n" + argument
@@ -247,10 +247,10 @@ def build_researchers(quick_thinking_llm, memories):
         "indicators. Counter the bull's points effectively."
     )
     bull = create_researcher_node(
-        quick_thinking_llm, memories["bull"], bull_prompt, "Bull Analyst"
+        quick_thinking_llm, memories["bull"], bull_prompt, "Bull Analyst (Optimistic Analyst)"
     )
     bear = create_researcher_node(
-        quick_thinking_llm, memories["bear"], bear_prompt, "Bear Analyst"
+        quick_thinking_llm, memories["bear"], bear_prompt, "Bear Analyst (Skeptic Analyst)"
     )
     return bull, bear
 
@@ -299,18 +299,24 @@ def build_trader(quick_thinking_llm, memories):
 
 
 # ===========================================================================
-# Risk debaters (Risky / Safe / Neutral)
+# Risk debaters (Aggressive / Defensive / Balanced)
 # ===========================================================================
 def create_risk_debator(llm, role_prompt, agent_name):
     def risk_debator_node(state):
         risk_state = state["risk_debate_state"]
         opponents_args = []
-        if agent_name != "Risky Analyst" and risk_state["current_risky_response"]:
-            opponents_args.append(f"Risky: {risk_state['current_risky_response']}")
-        if agent_name != "Safe Analyst" and risk_state["current_safe_response"]:
-            opponents_args.append(f"Safe: {risk_state['current_safe_response']}")
-        if agent_name != "Neutral Analyst" and risk_state["current_neutral_response"]:
-            opponents_args.append(f"Neutral: {risk_state['current_neutral_response']}")
+        if agent_name != "Aggressive Strategist" and risk_state["current_risky_response"]:
+            opponents_args.append(
+                f"Aggressive Strategist: {risk_state['current_risky_response']}"
+            )
+        if agent_name != "Defensive Strategist" and risk_state["current_safe_response"]:
+            opponents_args.append(
+                f"Defensive Strategist: {risk_state['current_safe_response']}"
+            )
+        if agent_name != "Balanced Strategist" and risk_state["current_neutral_response"]:
+            opponents_args.append(
+                f"Balanced Strategist: {risk_state['current_neutral_response']}"
+            )
 
         prompt = (
             f"{role_prompt}\n"
@@ -325,9 +331,9 @@ def create_risk_debator(llm, role_prompt, agent_name):
         new_risk_state = risk_state.copy()
         new_risk_state["history"] += f"\n{agent_name}: {response}"
         new_risk_state["latest_speaker"] = agent_name
-        if agent_name == "Risky Analyst":
+        if agent_name == "Aggressive Strategist":
             new_risk_state["current_risky_response"] = response
-        elif agent_name == "Safe Analyst":
+        elif agent_name == "Defensive Strategist":
             new_risk_state["current_safe_response"] = response
         else:
             new_risk_state["current_neutral_response"] = response
@@ -350,9 +356,9 @@ def build_risk_debaters(quick_thinking_llm):
         "You are a neutral risk analyst. You provide a balanced perspective, "
         "weighing both reward and risk."
     )
-    risky = create_risk_debator(quick_thinking_llm, risky_prompt, "Risky Analyst")
-    safe = create_risk_debator(quick_thinking_llm, safe_prompt, "Safe Analyst")
-    neutral = create_risk_debator(quick_thinking_llm, neutral_prompt, "Neutral Analyst")
+    risky = create_risk_debator(quick_thinking_llm, risky_prompt, "Aggressive Strategist")
+    safe = create_risk_debator(quick_thinking_llm, safe_prompt, "Defensive Strategist")
+    neutral = create_risk_debator(quick_thinking_llm, neutral_prompt, "Balanced Strategist")
     return risky, safe, neutral
 
 
