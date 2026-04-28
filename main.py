@@ -98,9 +98,9 @@ TEXT = {
         "trader_running": "\nRunning Trader...",
         "trader_proposal": "\n----- Trader's Proposal -----",
         "risk_debate": "--- Risk Management Debate ---",
-        "risky": "\n**Risky Analyst:**",
-        "safe": "\n**Safe Analyst:**",
-        "neutral": "\n**Neutral Analyst:**",
+        "risky": "\n**Aggressive Strategist:**",
+        "safe": "\n**Defensive Strategist:**",
+        "neutral": "\n**Balanced Strategist:**",
         "portfolio_running": "\nRunning Portfolio Manager...",
         "final_decision": "\n----- Portfolio Manager's Final Decision -----",
         "signal": "\n[bold green]EXTRACTED SIGNAL: {signal}[/bold green]",
@@ -262,7 +262,7 @@ def run_pipeline(
         console.print(
             Markdown(
                 state["investment_debate_state"]["current_response"].replace(
-                    "Bull Analyst: ", ""
+                    "Bull Analyst (Optimistic Analyst): ", ""
                 )
             )
         )
@@ -273,7 +273,7 @@ def run_pipeline(
         console.print(
             Markdown(
                 state["investment_debate_state"]["current_response"].replace(
-                    "Bear Analyst: ", ""
+                    "Bear Analyst (Skeptic Analyst): ", ""
                 )
             )
         )
