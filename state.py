@@ -23,7 +23,7 @@ class InvestDebateState(TypedDict):
 
 
 # ---------------------------------------------------------------------------
-# Risky / Safe / Neutral risk-management debate
+# Aggressive / Defensive / Balanced risk-management debate
 # ---------------------------------------------------------------------------
 class RiskDebateState(TypedDict):
     risky_history: str
