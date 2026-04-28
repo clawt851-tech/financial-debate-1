@@ -177,6 +177,34 @@ def get_latest_available_trade_date(symbol: str, lookback_days: int = 14) -> str
     return dates.max().date().isoformat()
 
 
+def _single_ticker_download_frame(df: pd.DataFrame, symbol: str) -> pd.DataFrame:
+    """Reduce yfinance's optional MultiIndex columns to one OHLCV table."""
+    if not isinstance(df.columns, pd.MultiIndex):
+        return df
+
+    upper_symbol = symbol.upper()
+    for level in range(df.columns.nlevels):
+        matches = [
+            value
+            for value in df.columns.get_level_values(level).unique()
+            if str(value).upper() == upper_symbol
+        ]
+        if matches:
+            return df.xs(matches[0], axis=1, level=level, drop_level=True)
+
+    if df.columns.nlevels == 2:
+        last_level = df.columns.get_level_values(-1)
+        if len(last_level.unique()) == 1:
+            return df.droplevel(-1, axis=1)
+
+    flattened = df.copy()
+    flattened.columns = [
+        "_".join(str(part) for part in column if str(part))
+        for column in flattened.columns
+    ]
+    return flattened
+
+
 @tool
 def get_technical_indicators(
     symbol: Annotated[str, "ticker symbol of the company"],
@@ -199,6 +227,7 @@ def get_technical_indicators(
         )
         if df.empty:
             return "No data available to compute indicators."
+        df = _single_ticker_download_frame(df, symbol)
         stock_df = stockstats_wrap(df)
         indicators = stock_df[
             ["macd", "rsi_14", "boll", "boll_ub", "boll_lb", "close_50_sma", "close_200_sma"]
