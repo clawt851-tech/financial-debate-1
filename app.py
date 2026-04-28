@@ -15,7 +15,12 @@ from pathlib import Path
 import streamlit as st
 
 from config import REQUIRED_KEYS
-from streamlit_manager import REPORT_TITLES, DeepTradingResult, StreamlitTradingManager
+from streamlit_manager import (
+    DISCLAIMERS,
+    REPORT_TITLES,
+    DeepTradingResult,
+    StreamlitTradingManager,
+)
 from streamlit_printer import StreamlitProgressPrinter
 
 try:
@@ -43,16 +48,34 @@ st.set_page_config(
 
 st.title("Deep Trading System")
 
+
+def render_disclaimer(language: str, sidebar: bool = False) -> None:
+    title = REPORT_TITLES[language]["disclaimer"]
+    body = DISCLAIMERS[language]
+    if sidebar:
+        st.markdown(f"**{title}**")
+        st.caption(body)
+        return
+
+    st.divider()
+    st.markdown(f"#### {title}")
+    st.caption(body)
+
+
 with st.sidebar:
     st.header("Run")
     company_query = st.text_input("Company name or ticker", value="NVDA")
     language_label = st.selectbox("Output language", list(LANGUAGE_OPTIONS.keys()))
+    selected_language = LANGUAGE_OPTIONS[language_label]
     run_clicked = st.button(
         "Run analysis",
         type="primary",
         disabled=not company_query.strip(),
         use_container_width=True,
     )
+
+    st.divider()
+    render_disclaimer(selected_language, sidebar=True)
 
     st.divider()
     st.header("API keys")
@@ -74,11 +97,12 @@ def render_result(result: DeepTradingResult) -> None:
     metric_cols[3].metric("Exchange", result.match.exchange or "-")
 
     tab_summary, tab_reports, tab_debates, tab_download = st.tabs(
-        ["Summary", "Reports", "Debates", "Download"]
+        ["Summary", "Reports", "Debates", "Downloads"]
     )
 
     with tab_summary:
         st.markdown(state.get("final_trade_decision", ""))
+        render_disclaimer(result.language)
 
     with tab_reports:
         with st.expander(titles["market"], expanded=True):
@@ -93,6 +117,7 @@ def render_result(result: DeepTradingResult) -> None:
             st.markdown(state.get("investment_plan", ""))
         with st.expander(titles["trader"]):
             st.markdown(state.get("trader_investment_plan", ""))
+        render_disclaimer(result.language)
 
     with tab_debates:
         with st.expander(titles["investment_debate"], expanded=True):
@@ -115,6 +140,7 @@ def render_result(result: DeepTradingResult) -> None:
                 hide_index=True,
                 use_container_width=True,
             )
+        render_disclaimer(result.language)
 
     with tab_download:
         st.markdown(result.markdown_report)
@@ -140,7 +166,7 @@ if run_clicked:
         try:
             result = manager.run(
                 query=company_query,
-                language=LANGUAGE_OPTIONS[language_label],
+                language=selected_language,
             )
         except Exception as exc:
             st.exception(exc)
