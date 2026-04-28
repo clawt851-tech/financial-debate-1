@@ -576,7 +576,7 @@ def create_researcher_node(llm, memory, role_prompt, agent_name):
 
         debate_state = state["investment_debate_state"].copy()
         debate_state["history"] += "\n" + argument
-        if agent_name == "Bull Analyst":
+        if agent_name == "Bull Analyst (Optimistic Analyst)":
             debate_state["bull_history"] += "\n" + argument
         else:
             debate_state["bear_history"] += "\n" + argument
@@ -598,10 +598,10 @@ bear_prompt = (
     "bull's points effectively."
 )
 bull_researcher_node = create_researcher_node(
-    quick_thinking_llm, bull_memory, bull_prompt, "Bull Analyst"
+    quick_thinking_llm, bull_memory, bull_prompt, "Bull Analyst (Optimistic Analyst)"
 )
 bear_researcher_node = create_researcher_node(
-    quick_thinking_llm, bear_memory, bear_prompt, "Bear Analyst"
+    quick_thinking_llm, bear_memory, bear_prompt, "Bear Analyst (Skeptic Analyst)"
 )
 
 
@@ -647,12 +647,18 @@ def create_risk_debator(llm, role_prompt, agent_name):
     def risk_debator_node(state):
         risk_state = state["risk_debate_state"]
         opponents_args = []
-        if agent_name != "Risky Analyst" and risk_state["current_risky_response"]:
-            opponents_args.append(f"Risky: {risk_state['current_risky_response']}")
-        if agent_name != "Safe Analyst" and risk_state["current_safe_response"]:
-            opponents_args.append(f"Safe: {risk_state['current_safe_response']}")
-        if agent_name != "Neutral Analyst" and risk_state["current_neutral_response"]:
-            opponents_args.append(f"Neutral: {risk_state['current_neutral_response']}")
+        if agent_name != "Aggressive Strategist" and risk_state["current_risky_response"]:
+            opponents_args.append(
+                f"Aggressive Strategist: {risk_state['current_risky_response']}"
+            )
+        if agent_name != "Defensive Strategist" and risk_state["current_safe_response"]:
+            opponents_args.append(
+                f"Defensive Strategist: {risk_state['current_safe_response']}"
+            )
+        if agent_name != "Balanced Strategist" and risk_state["current_neutral_response"]:
+            opponents_args.append(
+                f"Balanced Strategist: {risk_state['current_neutral_response']}"
+            )
 
         prompt = (
             f"{role_prompt}\n"
@@ -666,9 +672,9 @@ def create_risk_debator(llm, role_prompt, agent_name):
         new_risk_state = risk_state.copy()
         new_risk_state["history"] += f"\n{agent_name}: {response}"
         new_risk_state["latest_speaker"] = agent_name
-        if agent_name == "Risky Analyst":
+        if agent_name == "Aggressive Strategist":
             new_risk_state["current_risky_response"] = response
-        elif agent_name == "Safe Analyst":
+        elif agent_name == "Defensive Strategist":
             new_risk_state["current_safe_response"] = response
         else:
             new_risk_state["current_neutral_response"] = response
@@ -681,19 +687,19 @@ risky_node = create_risk_debator(
     quick_thinking_llm,
     "You are an aggressive risk analyst. You advocate for high-return "
     "opportunities and bold strategies.",
-    "Risky Analyst",
+    "Aggressive Strategist",
 )
 safe_node = create_risk_debator(
     quick_thinking_llm,
     "You are a conservative risk analyst. You prioritize capital preservation "
     "and minimizing volatility.",
-    "Safe Analyst",
+    "Defensive Strategist",
 )
 neutral_node = create_risk_debator(
     quick_thinking_llm,
     "You are a neutral risk analyst. You provide a balanced perspective, "
     "weighing both reward and risk.",
-    "Neutral Analyst",
+    "Balanced Strategist",
 )
 
 
@@ -803,14 +809,14 @@ def main() -> AgentState:
         state["investment_debate_state"] = bull_result["investment_debate_state"]
         console.print("\n**Bull's Argument:**")
         console.print(Markdown(
-            state["investment_debate_state"]["current_response"].replace("Bull Analyst: ", "")
+            state["investment_debate_state"]["current_response"].replace("Bull Analyst (Optimistic Analyst): ", "")
         ))
 
         bear_result = bear_researcher_node(state)
         state["investment_debate_state"] = bear_result["investment_debate_state"]
         console.print("\n**Bear's Rebuttal:**")
         console.print(Markdown(
-            state["investment_debate_state"]["current_response"].replace("Bear Analyst: ", "")
+            state["investment_debate_state"]["current_response"].replace("Bear Analyst (Skeptic Analyst): ", "")
         ))
         print()
 
@@ -834,17 +840,17 @@ def main() -> AgentState:
 
         risky_result = risky_node(state)
         state["risk_debate_state"] = risky_result["risk_debate_state"]
-        console.print("\n**Risky Analyst:**")
+        console.print("\n**Aggressive Strategist:**")
         console.print(Markdown(state["risk_debate_state"]["current_risky_response"]))
 
         safe_result = safe_node(state)
         state["risk_debate_state"] = safe_result["risk_debate_state"]
-        console.print("\n**Safe Analyst:**")
+        console.print("\n**Defensive Strategist:**")
         console.print(Markdown(state["risk_debate_state"]["current_safe_response"]))
 
         neutral_result = neutral_node(state)
         state["risk_debate_state"] = neutral_result["risk_debate_state"]
-        console.print("\n**Neutral Analyst:**")
+        console.print("\n**Balanced Strategist:**")
         console.print(Markdown(state["risk_debate_state"]["current_neutral_response"]))
 
     # ----- Portfolio manager -----------------------------------------------
